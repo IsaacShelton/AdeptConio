@@ -1,0 +1,25 @@
+
+import 'sys/cstdio.adept'
+import 'sys/csignal.adept'
+
+import "conio.adept"
+
+program_was_interuppted bool = false
+
+func main {
+    signal(SIGINT, func &controlC)
+
+    for (i int = 0; !kbhit() && !program_was_interuppted; i++) {
+        textcolor(i % 0xF)
+        cprintf('You haven\'t pressed a key.')
+        backgroundcolor((i + 1) % 0xF)
+        cprintf('\n')
+    }
+    
+    textcolor(0x7)
+    backgroundcolor(0x0)
+}
+
+func controlC(_ignore int) {
+    program_was_interuppted = true
+}

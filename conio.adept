@@ -1,0 +1,88 @@
+
+pragma compiler_supports '2.4'
+
+pragma windows_only
+#default conio_no_oldnames false
+#default conio_function_aliases true
+#default conio_include_legacy_functions true
+
+foreign _cgets(*ubyte) *ubyte
+foreign _cprintf(*ubyte, ...) int
+foreign _cputs(*ubyte) int
+foreign _cscanf(*ubyte, ...) int
+
+foreign _getch() int
+foreign _getche() int
+foreign _kbhit() int
+foreign _putch(int) int
+foreign _ungetch(int) int
+
+#unless conio_no_oldnames
+    foreign getch() int
+    foreign getche() int
+    foreign kbhit() int
+    foreign putch(int) int
+    foreign ungetch(int) int
+#end
+
+#if conio_function_aliases
+    func alias cgets(*ubyte) => _cgets
+    func alias cprintf(*ubyte, ...) => _cprintf
+    func alias cputs(*ubyte) => _cputs
+    func alias cscanf(*ubyte, ...) => _cscanf
+#end
+
+#if conio_include_legacy_functions
+    import 'sys/cstdio.adept'
+
+    alias WORD = short
+    alias DWORD = int
+    alias HANDLE = ptr
+    alias BOOL = int
+    struct COORD (X, Y short)
+    struct SMALL_RECT (Left, Top, Right, Bottom short)
+
+    struct CONSOLE_SCREEN_BUFFER_INFO (
+        dwSize COORD,
+        dwCursorPosition COORD,
+        wAttributes WORD,
+        srWindow SMALL_RECT,
+        dwMaximumWindowSize COORD
+    )
+
+    define STD_INPUT_HANDLE = -10 as DWORD
+    define STD_OUTPUT_HANDLE = -11 as DWORD
+    define STD_ERROR_HANDLE = -12 as DWORD
+
+    foreign GetStdHandle(DWORD) HANDLE
+    foreign GetConsoleScreenBufferInfo(HANDLE, *CONSOLE_SCREEN_BUFFER_INFO) BOOL
+    foreign SetConsoleTextAttribute(HANDLE, WORD) bool
+
+    func textcolor(foreground int) {
+        wColor WORD = undef
+
+        hStdOut HANDLE = GetStdHandle(STD_OUTPUT_HANDLE);
+        csbi CONSOLE_SCREEN_BUFFER_INFO = undef
+
+        if GetConsoleScreenBufferInfo(hStdOut, &csbi) {
+            wColor = (csbi.wAttributes & 0xF0) + (foreground & 0x0F)
+            SetConsoleTextAttribute(hStdOut, wColor)
+        }
+    }
+
+    func backgroundcolor(background int) {
+        wColor WORD = undef
+
+        hStdOut HANDLE = GetStdHandle(STD_OUTPUT_HANDLE);
+        csbi CONSOLE_SCREEN_BUFFER_INFO = undef
+
+        if GetConsoleScreenBufferInfo(hStdOut, &csbi) {
+            wColor = (background * 0xF0) + (csbi.wAttributes & 0x0F)
+            SetConsoleTextAttribute(hStdOut, wColor)
+        }
+    }
+    
+    func clrscr() {
+        system('cls')
+    }
+#end
